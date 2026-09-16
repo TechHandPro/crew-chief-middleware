@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "tickets": {
+      "command": "python",
+      "args": ["/absolute/path/to/tickets/server.py"],
+      "env": {
+        "TICKETS_BASE_URL": "https://tickets.example.com/api/v1"
+      }
+    }
+  }
+}

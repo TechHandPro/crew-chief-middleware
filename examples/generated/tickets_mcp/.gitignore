@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+
+# Secrets and client config that tends to collect them.
+.env
+.env.*
+!.env.example
+mcp.json

@@ -1,0 +1,443 @@
+{
+  "manifest_version": 1,
+  "generator": {
+    "name": "openapi-to-mcp",
+    "version": "0.1.0",
+    "generated_at": "2026-09-16T18:50:51+00:00"
+  },
+  "service": {
+    "name": "tickets",
+    "title": "Example Tickets API",
+    "version": "1.4.0",
+    "description": "A fictional service-desk API used to exercise the generator. It looks like the business APIs agents actually need (tickets, comments, filters, pagination) without belonging to any real vendor.",
+    "env_prefix": "TICKETS",
+    "base_url": "https://tickets.example.com/api/v1",
+    "auth": {
+      "kind": "bearer",
+      "env": {
+        "token": "TICKETS_API_TOKEN"
+      },
+      "scheme_name": "bearerAuth"
+    }
+  },
+  "tools": [
+    {
+      "name": "list_tickets",
+      "description": "List tickets\n\nReturns tickets in reverse chronological order, newest first.\n\nCalls GET /tickets.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/$defs/TicketStatus",
+            "description": "Only return tickets in this state."
+          },
+          "assignee": {
+            "type": "string",
+            "format": "email",
+            "description": "Filter by the assignee's email address."
+          },
+          "tag": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Repeatable tag filter; tickets must carry every tag given."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1-100."
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor from a previous response."
+          }
+        },
+        "additionalProperties": false,
+        "$defs": {
+          "TicketStatus": {
+            "type": "string",
+            "enum": [
+              "open",
+              "pending",
+              "solved",
+              "closed"
+            ]
+          }
+        }
+      },
+      "request": {
+        "method": "GET",
+        "path": "/tickets",
+        "parameters": [
+          {
+            "arg": "status",
+            "name": "status",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "assignee",
+            "name": "assignee",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "tag",
+            "name": "tag",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "cursor",
+            "name": "cursor",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listTickets",
+      "tags": [
+        "tickets"
+      ]
+    },
+    {
+      "name": "create_ticket",
+      "description": "Create a ticket\n\nCalls POST /tickets.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/TicketCreate",
+            "description": "The ticket to create."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "body"
+        ],
+        "$defs": {
+          "TicketCreate": {
+            "type": "object",
+            "required": [
+              "subject"
+            ],
+            "properties": {
+              "subject": {
+                "type": "string",
+                "description": "One-line summary."
+              },
+              "description": {
+                "type": "string",
+                "description": "Full problem statement."
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high",
+                  "urgent"
+                ],
+                "default": "normal"
+              },
+              "assignee": {
+                "type": "string",
+                "format": "email"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/tickets",
+        "parameters": [],
+        "body": {
+          "arg": "body",
+          "content_type": "application/json",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "createTicket",
+      "tags": [
+        "tickets"
+      ]
+    },
+    {
+      "name": "get_ticket",
+      "description": "Get one ticket\n\nFetch a single ticket, including its current assignee and tags.\n\nCalls GET /tickets/{ticketId}.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "description": "Ticket identifier, for example TCK-1042."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/tickets/{ticketId}",
+        "parameters": [
+          {
+            "arg": "ticket_id",
+            "name": "ticketId",
+            "location": "path",
+            "required": true
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getTicket",
+      "tags": [
+        "tickets"
+      ]
+    },
+    {
+      "name": "delete_ticket",
+      "description": "Delete a ticket\n\nCalls DELETE /tickets/{ticketId}.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "description": "Ticket identifier, for example TCK-1042."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket_id"
+        ]
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/tickets/{ticketId}",
+        "parameters": [
+          {
+            "arg": "ticket_id",
+            "name": "ticketId",
+            "location": "path",
+            "required": true
+          }
+        ]
+      },
+      "read_only": false,
+      "operation_id": "deleteTicket",
+      "tags": [
+        "tickets"
+      ]
+    },
+    {
+      "name": "update_ticket",
+      "description": "Update a ticket\n\nCalls PATCH /tickets/{ticketId}.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "description": "Ticket identifier, for example TCK-1042."
+          },
+          "body": {
+            "$ref": "#/$defs/TicketUpdate"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket_id",
+          "body"
+        ],
+        "$defs": {
+          "TicketUpdate": {
+            "type": "object",
+            "description": "Only the fields present are changed.",
+            "properties": {
+              "subject": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/$defs/TicketStatus"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high",
+                  "urgent"
+                ]
+              },
+              "assignee": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "email"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "TicketStatus": {
+            "type": "string",
+            "enum": [
+              "open",
+              "pending",
+              "solved",
+              "closed"
+            ]
+          }
+        }
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/tickets/{ticketId}",
+        "parameters": [
+          {
+            "arg": "ticket_id",
+            "name": "ticketId",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/json",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "updateTicket",
+      "tags": [
+        "tickets"
+      ]
+    },
+    {
+      "name": "list_ticket_comments",
+      "description": "List comments on a ticket\n\nCalls GET /tickets/{ticketId}/comments.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "description": "Ticket identifier, for example TCK-1042."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/tickets/{ticketId}/comments",
+        "parameters": [
+          {
+            "arg": "ticket_id",
+            "name": "ticketId",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listTicketComments",
+      "tags": [
+        "comments"
+      ]
+    },
+    {
+      "name": "add_ticket_comment",
+      "description": "Comment on a ticket\n\nCalls POST /tickets/{ticketId}/comments.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "description": "Ticket identifier, for example TCK-1042."
+          },
+          "body": {
+            "type": "object",
+            "required": [
+              "body"
+            ],
+            "properties": {
+              "body": {
+                "type": "string",
+                "description": "Comment text, Markdown allowed."
+              },
+              "internal": {
+                "type": "boolean",
+                "default": false,
+                "description": "Keep the comment hidden from the requester."
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket_id",
+          "body"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/tickets/{ticketId}/comments",
+        "parameters": [
+          {
+            "arg": "ticket_id",
+            "name": "ticketId",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/json",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "addTicketComment",
+      "tags": [
+        "comments"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: Example Tickets API
+  version: "1.4.0"
+  description: >-
+    A fictional service-desk API used to exercise the generator. It looks like the
+    business APIs agents actually need (tickets, comments, filters, pagination)
+    without belonging to any real vendor.
+servers:
+  - url: https://tickets.example.com/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: tickets
+  - name: comments
+paths:
+  /tickets:
+    get:
+      operationId: listTickets
+      summary: List tickets
+      description: Returns tickets in reverse chronological order, newest first.
+      tags: [tickets]
+      parameters:
+        - name: status
+          in: query
+          description: Only return tickets in this state.
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+        - name: assignee
+          in: query
+          description: Filter by the assignee's email address.
+          schema:
+            type: string
+            format: email
+        - name: tag
+          in: query
+          description: Repeatable tag filter; tickets must carry every tag given.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: Page size, 1-100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: cursor
+          in: query
+          description: Opaque cursor from a previous response.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A page of tickets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketPage"
+    post:
+      operationId: createTicket
+      summary: Create a ticket
+      tags: [tickets]
+      requestBody:
+        required: true
+        description: The ticket to create.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketCreate"
+      responses:
+        "201":
+          description: The created ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+  /tickets/{ticketId}:
+    parameters:
+      - $ref: "#/components/parameters/TicketId"
+    get:
+      operationId: getTicket
+      summary: Get one ticket
+      description: Fetch a single ticket, including its current assignee and tags.
+      tags: [tickets]
+      responses:
+        "200":
+          description: The ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "404":
+          description: No such ticket.
+    patch:
+      operationId: updateTicket
+      summary: Update a ticket
+      tags: [tickets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketUpdate"
+      responses:
+        "200":
+          description: The updated ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+    delete:
+      operationId: deleteTicket
+      summary: Delete a ticket
+      tags: [tickets]
+      responses:
+        "204":
+          description: Deleted.
+  /tickets/{ticketId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/TicketId"
+    get:
+      operationId: listTicketComments
+      summary: List comments on a ticket
+      tags: [comments]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: The comments.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: addTicketComment
+      summary: Comment on a ticket
+      tags: [comments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  description: Comment text, Markdown allowed.
+                internal:
+                  type: boolean
+                  default: false
+                  description: Keep the comment hidden from the requester.
+      responses:
+        "201":
+          description: The created comment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TicketId:
+      name: ticketId
+      in: path
+      required: true
+      description: Ticket identifier, for example TCK-1042.
+      schema:
+        type: string
+  schemas:
+    TicketStatus:
+      type: string
+      enum: [open, pending, solved, closed]
+    Ticket:
+      type: object
+      required: [id, subject, status]
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        assignee:
+          type: string
+          format: email
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TicketPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ticket"
+        nextCursor:
+          type: string
+          nullable: true
+    TicketCreate:
+      type: object
+      required: [subject]
+      properties:
+        subject:
+          type: string
+          description: One-line summary.
+        description:
+          type: string
+          description: Full problem statement.
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        assignee:
+          type: string
+          format: email
+        tags:
+          type: array
+          items:
+            type: string
+    TicketUpdate:
+      type: object
+      description: Only the fields present are changed.
+      properties:
+        subject:
+          type: string
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        assignee:
+          type: string
+          format: email
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+    Comment:
+      type: object
+      required: [id, body]
+      properties:
+        id:
+          type: string
+        body:
+          type: string
+        internal:
+          type: boolean
+        author:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

@@ -1,0 +1,32 @@
+# Specialization for the example tickets API.
+#
+#   openapi_to_mcp generate --spec examples/tickets-openapi.yaml \
+#     --out out/tickets --name tickets --overrides examples/tickets-overrides.yaml
+#
+# Curation lives here instead of in patches against generated code, so
+# regenerating after a vendor ships new endpoints keeps your decisions.
+
+# Only these tools reach the agent (globs; omit `include` to keep everything).
+include:
+  - list_*
+  - get_*
+  - add_ticket_comment
+
+# Dropped even if they matched `include`.
+exclude:
+  - delete_ticket
+
+tools:
+  list_tickets:
+    # Rename vendor phrasing to something an agent will pick correctly.
+    name: search_tickets
+    # Descriptions are prompt surface: say when to use the tool, not just what it wraps.
+    description: >-
+      Search the service desk queue. Use this to find tickets by status, assignee,
+      or tag before acting on one; pass the returned id to get_ticket for detail.
+  add_ticket_comment:
+    description: >-
+      Add a comment to a ticket. Set internal=true for notes the requester should
+      not see.
+  list_ticket_comments:
+    hidden: true
