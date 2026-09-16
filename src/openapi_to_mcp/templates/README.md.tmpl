@@ -1,0 +1,59 @@
+# {{name}} MCP server
+
+MCP tools for **{{title}}** ({{api_version}}), generated from an OpenAPI document by
+openapi-to-mcp {{generator_version}} (crew-chief-middleware).
+
+- Base URL: `{{base_url}}`
+- Authentication: `{{auth_kind}}` (credentials from environment variables only)
+- Tools: {{tool_count}}
+
+## Run it
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env      # fill in credentials, keep it out of git
+set -a && . ./.env && set +a
+python server.py          # speaks MCP over stdio
+```
+
+The process reads MCP JSON-RPC on stdin and writes it on stdout, so it looks idle
+when you start it by hand. Logs go to stderr.
+
+## Connect an MCP client
+
+Copy `mcp.example.json` into your client config (Cursor: `~/.cursor/mcp.json`, or
+`.cursor/mcp.json` in a project), replace the placeholder path with the absolute
+path to `server.py`, and provide credentials the way your client supports —
+inherited environment, its `env` block, or a secret manager. Do not commit a
+config file containing real credentials; `mcp.json` is git-ignored here.
+
+## Configuration
+
+| Environment variable | Purpose |
+| --- | --- |
+{{credential_env_docs}}
+| `{{env_prefix}}_BASE_URL` | override the API base URL |
+| `{{env_prefix}}_READ_ONLY` | expose only non-mutating tools |
+| `{{env_prefix}}_TIMEOUT_SECONDS` | per-request timeout (default 30) |
+| `{{env_prefix}}_MAX_RESPONSE_BYTES` | response cap before truncation (default 100000) |
+| `{{env_prefix}}_MAX_RETRIES` | retries for idempotent requests on 429/502/503/504 (default 2) |
+| `{{env_prefix}}_ALLOW_INSECURE_HTTP` | allow plaintext http to a non-loopback host |
+| `{{env_prefix}}_LOG_LEVEL` | stderr log level (default WARNING) |
+
+## Tools
+
+{{tool_table}}
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `{{manifest_filename}}` | generated tool manifest: names, descriptions, JSON Schemas, HTTP bindings |
+| `server.py` | entry point, plus the seams for hand-written tools |
+| `{{runtime_package}}/` | vendored runtime: manifest loading, env config, auth, HTTP, MCP wiring |
+| `.env.example` | every environment variable this server reads |
+| `Dockerfile` | container image (stdio today, HTTP transport later) |
+
+Regenerating with `openapi_to_mcp generate --force` rewrites `{{manifest_filename}}`,
+`{{runtime_package}}/`, and this README. Keep hand-written tools in `server.py`.
