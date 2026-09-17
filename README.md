@@ -50,9 +50,9 @@ The process looks idle because it is waiting for MCP JSON-RPC on stdin. That is
 what an MCP client attaches to. Committed examples of the output live in
 [`examples/generated/tickets_mcp`](examples/generated/tickets_mcp) (fictional
 service desk) and [`examples/generated/meta_graph_mcp`](examples/generated/meta_graph_mcp)
-(curated Facebook Pages / Meta Graph surface for SOCIAL). How SOCIAL or Grok Bot
-connects, including vaulted Page tokens and `META_GRAPH_READ_ONLY=1`, is in
-[`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
+(one real vendor: a curated Facebook Pages / Meta Graph subset). How to
+generate that second example, including `META_GRAPH_READ_ONLY=1` and token
+injection, is in [`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
 
 Swap in a real spec by changing three things: `--spec`, `--name` (which also sets
 the environment variable prefix), and the credentials you export.
@@ -93,15 +93,17 @@ virtualenv, each generated project also has a `Dockerfile`
 
 Start with `*_READ_ONLY=1` while you are still deciding which write operations an
 agent should be trusted with; the server then advertises only non-mutating tools.
-SOCIAL should keep `META_GRAPH_READ_ONLY=1` until a human has approved live Page
-posts. Page tokens come from the TNT vault via orange-prompt — never from chat
-and never from a committed file.
+Keep that flag on for any vendor that can publish or mutate until a human has
+approved live writes. Tokens come from the process environment or your host's
+secret manager — never from chat and never from a committed file.
 
-## Meta Graph Pages example (SOCIAL)
+## Vendor example: Meta Graph Pages
 
-Facebook has no solid marketplace MCP plugin, so SOCIAL generates one here from
-a **small** Pages-focused spec — not the entire Graph API, and not the official
-WhatsApp-only `facebook/openapi`.
+Facebook has no solid marketplace MCP plugin, so this repo includes a **small**
+Pages-focused spec as a second example — not the entire Graph API, and not the
+official WhatsApp-only `facebook/openapi`. It is one vendor among others; the
+tickets sample is the other committed one, and any OpenAPI 3 document can take
+the same path.
 
 ```bash
 openapi_to_mcp generate \
@@ -114,17 +116,18 @@ openapi_to_mcp generate \
 
 | Env | Purpose |
 | --- | --- |
-| `META_GRAPH_API_TOKEN` | Page access token from the TNT vault (orange-prompt only) |
-| `META_GRAPH_READ_ONLY=1` | Default for SOCIAL: hide create/comment/media publish tools |
+| `META_GRAPH_API_TOKEN` | Page access token (environment or secret manager) |
+| `META_GRAPH_READ_ONLY=1` | Hide create/comment/media publish tools |
 | `META_GRAPH_BASE_URL` | Optional Graph host/version override (spec default `https://graph.facebook.com/v24.0`) |
 
-Never commit the token. Operator notes, Grok Bot `mcp.json` shape, and Graph
+Never commit the token. Operator notes, a sample `mcp.json` shape, and Graph
 permissions: [`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
 
-The measurable crew loop for this example (discover → generate → fail-closed
-`READ_ONLY` smoke → seat a **non-prod** agent only) is
-[`docs/FACTORY_LOOP.md`](docs/FACTORY_LOOP.md) (TNT #330). `make factory`
-runs that Meta Graph dogfood path. It is not a multi-vendor factory product.
+The same discover → generate → fail-closed `READ_ONLY` smoke → seat a
+**non-prod** agent loop is documented in
+[`docs/FACTORY_LOOP.md`](docs/FACTORY_LOOP.md). `make factory` runs that
+dogfood path against the Meta Graph files. It is not a multi-vendor factory
+product.
 
 ## How it works
 
@@ -208,7 +211,7 @@ make install     # editable install with dev extras
 make test        # pytest, including a real subprocess MCP handshake
 make lint        # ruff
 make example     # regenerate tickets_mcp and meta_graph_mcp
-make factory     # TNT #330 Meta Graph dogfood: list-tools → generate → smoke
+make factory     # Meta Graph dogfood: list-tools → generate → smoke
 ```
 
 The test suite covers OpenAPI to tool-list translation, argument mapping, the
@@ -236,4 +239,6 @@ generator produces.
 No hosted control plane, no credential storage, and no browser automation in
 this repo. The fictional tickets sample and the curated Meta Graph Pages subset
 are regeneratable examples, not production connectors: they never include
-tokens. ConnectWise-class PSA connectors are still out of scope.
+tokens. A particular issue tracker, vault, or seating ritual is never required
+to generate or run a server. ConnectWise-class PSA connectors are still out of
+scope.

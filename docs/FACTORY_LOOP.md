@@ -1,8 +1,10 @@
-# MCP factory loop (TNT #330)
+# MCP factory loop
 
-One **dogfood path**. This is not a factory product, a vendor registry, or an
-Ops Console surface (those are #331 / #338). The loop that already worked for
-Meta Graph Pages is the loop a crew repeats:
+Optional **operator runbook** for one measured dogfood path (recorded as
+TNT #330). Using the generator does not require this process, a particular
+ticket tracker, or a particular vault. This is not a factory product, a
+vendor registry, or an Ops Console surface (those are #331 / #338). The loop
+that already worked for Meta Graph Pages is the loop a crew repeats:
 
 **discover → generate → READ_ONLY smoke → seat a non-prod agent**
 
@@ -47,8 +49,9 @@ writes is outside this ticket.
 
 ## Credentials (never commit, never chat)
 
-Page / vendor tokens are secrets. SOCIAL must not ask for them in Slack or
-chat.
+Page / vendor tokens are secrets. They must not be asked for in Slack or
+chat. The orange-prompt + TNT vault steps below are optional operator notes
+for one crew — any secret manager that injects `*_API_TOKEN` is enough.
 
 1. **Orange-prompt** Jeremiah (or the operator) for a Page access token with
    `pages_show_list`, `pages_read_engagement`, `pages_read_user_content`, and
