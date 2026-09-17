@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed factory smoke for one generated MCP server (TNT #330).
+"""Fail-closed factory smoke for one generated MCP server.
 
 Dogfood default is the committed Meta Graph Pages example. The script prints a
 single PASS/FAIL line, never echoes credential values, and keeps READ_ONLY=1
@@ -41,7 +41,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         token_var = f"{prefix}_API_TOKEN"
         token = (environment.get(token_var) or "").strip()
         if not token:
-            raise SmokeFail(f"missing {token_var} (vault / orange-prompt only; never commit tokens)")
+            raise SmokeFail(f"missing {token_var} (inject from the environment; never commit tokens)")
         secrets = (token,)
 
         read_only = _read_only(prefix, environment)
@@ -91,9 +91,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
 
 
 def _parse_args(argv: Sequence[str] | None, environment: Mapping[str, str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Fail-closed READ_ONLY smoke for one generated MCP server (TNT #330)."
-    )
+    parser = argparse.ArgumentParser(description="Fail-closed READ_ONLY smoke for one generated MCP server.")
     parser.add_argument(
         "--name",
         default=environment.get("NAME") or DEFAULT_NAME,

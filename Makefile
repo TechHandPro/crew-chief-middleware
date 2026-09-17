@@ -32,7 +32,7 @@ demo: ## show the tools the sample specs produce
 	$(PYTHON) -m openapi_to_mcp list-tools --spec $(SPEC) --name tickets
 	$(PYTHON) -m openapi_to_mcp list-tools --spec $(META_SPEC) --name meta_graph --overrides $(META_OVERRIDES)
 
-# TNT #330: one Meta Graph dogfood path, not a multi-vendor factory product.
+# One Meta Graph dogfood path, not a multi-vendor factory product.
 # `make example` keeps SPEC=tickets. Command-line SPEC=/NAME=/OUT=/OVERRIDES=
 # still override these target-specific defaults (GNU make).
 factory factory-list factory-generate factory-smoke: SPEC = $(META_SPEC)
@@ -49,7 +49,7 @@ factory-generate: ## regenerate the factory server (Meta Graph default)
 factory-smoke: ## fail-closed READ_ONLY smoke (requires NAME_API_TOKEN)
 	NAME=$(NAME) OUT=$(OUT) $(PYTHON) scripts/factory_smoke.py
 
-factory: factory-list factory-generate factory-smoke ## discover → generate → smoke (TNT #330)
+factory: factory-list factory-generate factory-smoke ## discover → generate → smoke (Meta Graph default)
 
 clean:
 	rm -rf out build dist .pytest_cache .ruff_cache

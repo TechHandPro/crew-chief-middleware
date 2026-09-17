@@ -1,4 +1,4 @@
-# Specialization for the curated Meta Graph Pages spec (TNT #324 SOCIAL).
+# Specialization for the curated Meta Graph Pages spec.
 #
 #   openapi_to_mcp generate \
 #     --spec examples/meta-graph-pages-openapi.yaml \
@@ -6,9 +6,9 @@
 #     --name meta_graph \
 #     --overrides examples/meta-graph-pages-overrides.yaml
 #
-# Names already come from operationIds. Descriptions are prompt surface for
-# SOCIAL / Grok Bot: when to call each tool, which token it needs, and that
-# writes are off under META_GRAPH_READ_ONLY=1.
+# Names already come from operationIds. Descriptions are prompt surface: when
+# to call each tool, which token it needs, and that writes are off under
+# META_GRAPH_READ_ONLY=1.
 
 tools:
   get_current_page:
