@@ -17,6 +17,7 @@ ARCHITECTURE = REPO_ROOT / "ARCHITECTURE.md"
 MAKEFILE = REPO_ROOT / "Makefile"
 PUBLIC_PACK_DOC = REPO_ROOT / "docs" / "public-pack.md"
 META_NOTES = REPO_ROOT / "examples" / "meta-graph-pages.md"
+X_NOTES = REPO_ROOT / "examples" / "x-api.md"
 
 # Operator DNS assembled so this test is the only scanner that names it.
 _PRIVATE_OPERATOR_DNS = ".".join(("techhand", "pro"))
@@ -46,6 +47,10 @@ _PUBLIC_EXAMPLE_GLOBS = (
     "examples/generated/tickets_mcp/.env.example",
     "examples/generated/meta_graph_mcp/README.md",
     "examples/generated/meta_graph_mcp/.env.example",
+    "examples/x-api-openapi.yaml",
+    "examples/x-api-overrides.yaml",
+    "examples/generated/x_mcp/README.md",
+    "examples/generated/x_mcp/.env.example",
 )
 
 
@@ -95,6 +100,8 @@ class TestReadmeProseIsVendorNeutral:
             "tickets-openapi.yaml",
             "meta graph",
             "meta_graph",
+            "x-api-openapi.yaml",
+            "x_mcp",
             "make factory",
             "read_only",
             "secret manager",
@@ -111,6 +118,17 @@ class TestReadmeProseIsVendorNeutral:
         assert re.search(r"(?i)\borange-prompt\b", optional)
         assert re.search(r"(?i)\bvault\b", optional)
 
+    def test_x_api_example_notes_are_optional_not_required(self) -> None:
+        text = X_NOTES.read_text(encoding="utf-8")
+        assert re.search(r"(?i)^## optional operator notes", text, re.MULTILINE)
+        default_path, optional = re.split(r"(?im)^## optional operator notes\s*$", text, maxsplit=1)
+        assert default_path.strip()
+        assert optional.strip()
+        assert _hits(default_path, _README_PROCESS_RES) == []
+        assert re.search(r"(?i)\borange-prompt\b", optional)
+        assert re.search(r"(?i)\bvault\b", optional)
+        assert re.search(r"(?i)\bx_api_token\b", optional)
+
 
 class TestPublicExamplesStayScrubbed:
     def test_public_pack_surfaces_omit_private_hosts_and_secrets(self) -> None:
@@ -119,6 +137,7 @@ class TestPublicExamplesStayScrubbed:
             ARCHITECTURE,
             MAKEFILE,
             META_NOTES,
+            X_NOTES,
             *[REPO_ROOT / rel for rel in _PUBLIC_EXAMPLE_GLOBS],
         ]
         host_hits: list[str] = []
@@ -142,6 +161,7 @@ class TestPublicExamplesStayScrubbed:
         for rel in (
             "examples/generated/tickets_mcp/.env.example",
             "examples/generated/meta_graph_mcp/.env.example",
+            "examples/generated/x_mcp/.env.example",
         ):
             text = (REPO_ROOT / rel).read_text(encoding="utf-8")
             assert "API_TOKEN=" in text

@@ -1,0 +1,256 @@
+{
+  "manifest_version": 1,
+  "generator": {
+    "name": "openapi-to-mcp",
+    "version": "0.1.0",
+    "generated_at": "2026-09-17T19:28:32+00:00"
+  },
+  "service": {
+    "name": "x",
+    "title": "X API Posts (curated)",
+    "version": "2",
+    "description": "A deliberately small OpenAPI 3 subset of the X (Twitter) API v2 for one user: identity, tweet lookup, create/quote a Post, and one-shot image upload. This is not the full X API (no v1.1, no chunked video, no DMs, no search, no ads). Official marketplace MCP plugins that only expose read/chat tools cannot publish; this document is the write path the generator can emit. Use a pre-obtained OAuth 2.0 *user* access token (not an app-only bearer). Never put tokens in this file.",
+    "env_prefix": "X",
+    "base_url": "https://api.x.com",
+    "auth": {
+      "kind": "bearer",
+      "env": {
+        "token": "X_API_TOKEN"
+      },
+      "scheme_name": "bearerAuth"
+    }
+  },
+  "tools": [
+    {
+      "name": "get_me",
+      "description": "Identify the X user this OAuth 2.0 user-context token belongs to. Call this first. App-only (application-only) bearers cannot write and often fail here. Do not send the token as an argument; it is X_API_TOKEN.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_fields": {
+            "type": "string",
+            "default": "id,name,username,verified",
+            "description": "Comma-separated user fields."
+          }
+        },
+        "additionalProperties": false
+      },
+      "request": {
+        "method": "GET",
+        "path": "/2/users/me",
+        "parameters": [
+          {
+            "arg": "user_fields",
+            "name": "user.fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getMe",
+      "tags": [
+        "Users"
+      ]
+    },
+    {
+      "name": "get_post",
+      "description": "Read one Post by id. Use this to confirm a publish or to copy the id you will quote / reply to.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Post (tweet) id."
+          },
+          "tweet_fields": {
+            "type": "string",
+            "default": "id,text,author_id,created_at,conversation_id,public_metrics",
+            "description": "Comma-separated Post fields."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/2/tweets/{id}",
+        "parameters": [
+          {
+            "arg": "id",
+            "name": "id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "tweet_fields",
+            "name": "tweet.fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getPost",
+      "tags": [
+        "Posts"
+      ]
+    },
+    {
+      "name": "create_post",
+      "description": "Publish a Post as the authenticated user. Pass text, and optionally quote_tweet_id (quote) or media.media_ids (images from upload_media). Do not send quote_tweet_id and media together — X rejects that pair. To add images under another Post, use reply.in_reply_to_tweet_id. Requires tweet.write. Blocked while X_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/CreatePostRequest",
+            "description": "Post text, optional quote id, optional media ids, optional reply."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "body"
+        ],
+        "$defs": {
+          "CreatePostRequest": {
+            "type": "object",
+            "description": "X requires text and/or media. quote_tweet_id quotes another Post. quote_tweet_id and media are mutually exclusive on this endpoint.",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Post text (280 graphemes for standard Posts).",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "quote_tweet_id": {
+                "type": "string",
+                "description": "Id of the Post to quote. Mutually exclusive with media. May require an entitled X API plan."
+              },
+              "media": {
+                "type": "object",
+                "description": "Attach previously uploaded media ids. Mutually exclusive with quote_tweet_id. Upload images first with upload_media.",
+                "required": [
+                  "media_ids"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "media_ids": {
+                    "type": "array",
+                    "description": "Media ids from upload_media (data.id), 1-4.",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "reply": {
+                "type": "object",
+                "description": "Reply in-thread instead of quoting. Use this to attach images under another Post when a quote cannot carry media.",
+                "required": [
+                  "in_reply_to_tweet_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "in_reply_to_tweet_id": {
+                    "type": "string",
+                    "description": "Id of the Post being replied to."
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/2/tweets",
+        "parameters": [],
+        "body": {
+          "arg": "body",
+          "content_type": "application/json",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "createPost",
+      "tags": [
+        "Posts"
+      ]
+    },
+    {
+      "name": "upload_media",
+      "description": "Upload one image as base64 JSON (media + media_category=tweet_image). Returns data.id for create_post media.media_ids. No multipart, no local file path, no chunked video. Requires media.write. Blocked while X_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/UploadMediaRequest"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "body"
+        ],
+        "$defs": {
+          "UploadMediaRequest": {
+            "type": "object",
+            "required": [
+              "media",
+              "media_category"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "media": {
+                "type": "string",
+                "format": "byte",
+                "description": "Base64-encoded image bytes (OpenAPI format byte). JSON only — no multipart file field. Keep images within X photo size limits."
+              },
+              "media_category": {
+                "type": "string",
+                "description": "One-shot upload category. tweet_image for still photos.",
+                "enum": [
+                  "tweet_image",
+                  "tweet_gif"
+                ],
+                "default": "tweet_image"
+              },
+              "media_type": {
+                "type": "string",
+                "description": "MIME type of the image.",
+                "enum": [
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                  "image/gif",
+                  "image/bmp",
+                  "image/pjpeg",
+                  "image/tiff"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/2/media/upload",
+        "parameters": [],
+        "body": {
+          "arg": "body",
+          "content_type": "application/json",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "uploadMedia",
+      "tags": [
+        "Media"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# Specialization for the curated X API Posts spec.
+#
+#   openapi_to_mcp generate \
+#     --spec examples/x-api-openapi.yaml \
+#     --out examples/generated/x_mcp \
+#     --name x \
+#     --overrides examples/x-api-overrides.yaml
+#
+# Names already come from operationIds. Descriptions are prompt surface: when
+# to call each tool, which token it needs, and that writes are off under
+# X_READ_ONLY=1.
+
+tools:
+  get_me:
+    description: >-
+      Identify the X user this OAuth 2.0 user-context token belongs to. Call
+      this first. App-only (application-only) bearers cannot write and often
+      fail here. Do not send the token as an argument; it is X_API_TOKEN.
+  get_post:
+    description: >-
+      Read one Post by id. Use this to confirm a publish or to copy the id
+      you will quote / reply to.
+  create_post:
+    description: >-
+      Publish a Post as the authenticated user. Pass text, and optionally
+      quote_tweet_id (quote) or media.media_ids (images from upload_media).
+      Do not send quote_tweet_id and media together — X rejects that pair.
+      To add images under another Post, use reply.in_reply_to_tweet_id.
+      Requires tweet.write. Blocked while X_READ_ONLY=1.
+  upload_media:
+    description: >-
+      Upload one image as base64 JSON (media + media_category=tweet_image).
+      Returns data.id for create_post media.media_ids. No multipart, no
+      local file path, no chunked video. Requires media.write. Blocked
+      while X_READ_ONLY=1.
