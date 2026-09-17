@@ -11,7 +11,14 @@ import json
 from pathlib import Path
 
 import pytest
-from tests.conftest import META_GRAPH_OVERRIDES, META_GRAPH_SPEC, REPO_ROOT, SAMPLE_SPEC
+from tests.conftest import (
+    META_GRAPH_OVERRIDES,
+    META_GRAPH_SPEC,
+    REPO_ROOT,
+    SAMPLE_SPEC,
+    X_API_OVERRIDES,
+    X_API_SPEC,
+)
 
 from openapi_to_mcp import __version__
 from openapi_to_mcp.generator import generate
@@ -97,8 +104,39 @@ def test_committed_meta_graph_example_exposes_social_page_tools() -> None:
     assert document["service"]["base_url"] == "https://graph.facebook.com/v24.0"
 
 
+def test_committed_x_api_example_exists() -> None:
+    committed = REPO_ROOT / "examples" / "generated" / "x_mcp"
+    assert (committed / "tools.json").is_file(), f"missing committed example; {REGENERATE_HINT}"
+
+
+def test_committed_x_api_example_matches_a_fresh_generation(x_api_service: Service, tmp_path: Path) -> None:
+    fresh = generate(x_api_service, tmp_path / "x_mcp", generator_version=__version__)
+    _assert_committed_matches(REPO_ROOT / "examples" / "generated" / "x_mcp", fresh.directory)
+
+
+def test_committed_x_api_example_exposes_create_post_and_upload_media() -> None:
+    document = json.loads(
+        (REPO_ROOT / "examples" / "generated" / "x_mcp" / "tools.json").read_text(encoding="utf-8")
+    )
+    names = [tool["name"] for tool in document["tools"]]
+    for required in ("get_me", "get_post", "create_post", "upload_media"):
+        assert required in names
+    assert document["service"]["env_prefix"] == "X"
+    assert document["service"]["base_url"] == "https://api.x.com"
+    by_name = {tool["name"]: tool for tool in document["tools"]}
+    assert by_name["create_post"]["request"]["method"] == "POST"
+    assert by_name["create_post"]["request"]["path"] == "/2/tweets"
+    assert by_name["create_post"]["request"]["body"]["content_type"] == "application/json"
+    assert by_name["upload_media"]["request"]["path"] == "/2/media/upload"
+    assert by_name["upload_media"]["request"]["body"]["content_type"] == "application/json"
+    assert by_name["create_post"]["read_only"] is False
+    assert by_name["upload_media"]["read_only"] is False
+
+
 def test_example_sources_used_by_make_example_are_where_the_makefile_says() -> None:
     """Guard the Makefile contract so `make example` stays the regen path."""
     assert SAMPLE_SPEC.is_file()
     assert META_GRAPH_SPEC.is_file()
     assert META_GRAPH_OVERRIDES.is_file()
+    assert X_API_SPEC.is_file()
+    assert X_API_OVERRIDES.is_file()

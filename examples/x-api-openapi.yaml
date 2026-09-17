@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: X API Posts (curated)
+  version: "2"
+  description: >-
+    A deliberately small OpenAPI 3 subset of the X (Twitter) API v2 for one
+    user: identity, tweet lookup, create/quote a Post, and one-shot image
+    upload. This is not the full X API (no v1.1, no chunked video, no DMs,
+    no search, no ads). Official marketplace MCP plugins that only expose
+    read/chat tools cannot publish; this document is the write path the
+    generator can emit. Use a pre-obtained OAuth 2.0 *user* access token
+    (not an app-only bearer). Never put tokens in this file.
+  contact:
+    name: X Developers
+    url: https://developer.x.com/
+  license:
+    name: X Developer Agreement and Policy
+    url: https://developer.x.com/en/developer-terms/agreement-and-policy.html
+externalDocs:
+  description: Manage Posts
+  url: https://docs.x.com/x-api/posts/manage-tweets/quickstart
+servers:
+  - url: https://api.x.com
+    description: X API v2 (override with X_BASE_URL)
+security:
+  - bearerAuth: []
+tags:
+  - name: Users
+  - name: Posts
+  - name: Media
+paths:
+  /2/users/me:
+    get:
+      operationId: getMe
+      summary: Get the authenticated user
+      description: >-
+        Identify the X user this user-context token belongs to. Call this
+        first to confirm the token is a user token (app-only bearers fail
+        writes). Gated tools stay hidden when X_READ_ONLY=1.
+      tags: [Users]
+      parameters:
+        - $ref: "#/components/parameters/UserFields"
+      responses:
+        "200":
+          description: The authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /2/tweets/{id}:
+    get:
+      operationId: getPost
+      summary: Get one Post
+      description: Fetch a Post by id (verify a publish, or read a Post you will quote).
+      tags: [Posts]
+      parameters:
+        - $ref: "#/components/parameters/TweetId"
+        - $ref: "#/components/parameters/TweetFields"
+      responses:
+        "200":
+          description: The Post.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TweetResponse"
+  /2/tweets:
+    post:
+      operationId: createPost
+      summary: Create a Post (tweet or quote)
+      description: >-
+        Publish as the authenticated user. Supply text and/or media.media_ids.
+        Set quote_tweet_id to quote another Post. X treats quote_tweet_id and
+        media as mutually exclusive — do not send both; to attach images to
+        a conversation use reply.in_reply_to_tweet_id instead of a quote.
+        Quote-posting may require an X API plan that entitles quote_tweet_id
+        (docs currently call out Enterprise). Needs tweet.write. Gated when
+        X_READ_ONLY=1.
+      tags: [Posts]
+      requestBody:
+        required: true
+        description: Post text, optional quote id, optional media ids, optional reply.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: The new Post id and text.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePostResponse"
+  /2/media/upload:
+    post:
+      operationId: uploadMedia
+      summary: Upload an image (one-shot)
+      description: >-
+        One-shot image upload on api.x.com (JSON body, not multipart). Pass
+        the file as base64 in `media` and media_category=tweet_image. Use the
+        returned data.id as media.media_ids on create_post. Images only —
+        chunked initialize/append/finalize (video) is omitted because append
+        is binary. Needs media.write. Gated when X_READ_ONLY=1.
+      tags: [Media]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadMediaRequest"
+      responses:
+        "200":
+          description: Uploaded media id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadMediaResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: OAuth 2.0 user access token
+      description: >-
+        Pre-obtained OAuth 2.0 user-context access token with tweet.read,
+        tweet.write, users.read, media.write (and usually offline.access).
+        The generated server sends Authorization: Bearer. Token comes from
+        X_API_TOKEN only. App-only (application-only) bearers cannot write.
+        OAuth 1.0a HMAC signing is not used.
+  parameters:
+    TweetId:
+      name: id
+      in: path
+      required: true
+      description: Post (tweet) id.
+      schema:
+        type: string
+    UserFields:
+      name: user.fields
+      in: query
+      description: Comma-separated user fields.
+      schema:
+        type: string
+        default: id,name,username,verified
+    TweetFields:
+      name: tweet.fields
+      in: query
+      description: Comma-separated Post fields.
+      schema:
+        type: string
+        default: id,text,author_id,created_at,conversation_id,public_metrics
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        verified:
+          type: boolean
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/User"
+    Tweet:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        author_id:
+          type: string
+        created_at:
+          type: string
+        conversation_id:
+          type: string
+        public_metrics:
+          type: object
+          additionalProperties: true
+    TweetResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Tweet"
+    CreatePostRequest:
+      type: object
+      description: >-
+        X requires text and/or media. quote_tweet_id quotes another Post.
+        quote_tweet_id and media are mutually exclusive on this endpoint.
+      properties:
+        text:
+          type: string
+          description: Post text (280 graphemes for standard Posts).
+          minLength: 1
+          maxLength: 4000
+        quote_tweet_id:
+          type: string
+          description: >-
+            Id of the Post to quote. Mutually exclusive with media. May
+            require an entitled X API plan.
+        media:
+          type: object
+          description: >-
+            Attach previously uploaded media ids. Mutually exclusive with
+            quote_tweet_id. Upload images first with upload_media.
+          required: [media_ids]
+          additionalProperties: false
+          properties:
+            media_ids:
+              type: array
+              description: Media ids from upload_media (data.id), 1-4.
+              minItems: 1
+              maxItems: 4
+              items:
+                type: string
+        reply:
+          type: object
+          description: >-
+            Reply in-thread instead of quoting. Use this to attach images
+            under another Post when a quote cannot carry media.
+          required: [in_reply_to_tweet_id]
+          additionalProperties: false
+          properties:
+            in_reply_to_tweet_id:
+              type: string
+              description: Id of the Post being replied to.
+      additionalProperties: false
+    CreatePostResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            text:
+              type: string
+    UploadMediaRequest:
+      type: object
+      required: [media, media_category]
+      additionalProperties: false
+      properties:
+        media:
+          type: string
+          format: byte
+          description: >-
+            Base64-encoded image bytes (OpenAPI format byte). JSON only —
+            no multipart file field. Keep images within X photo size limits.
+        media_category:
+          type: string
+          description: One-shot upload category. tweet_image for still photos.
+          enum: [tweet_image, tweet_gif]
+          default: tweet_image
+        media_type:
+          type: string
+          description: MIME type of the image.
+          enum:
+            - image/jpeg
+            - image/png
+            - image/webp
+            - image/gif
+            - image/bmp
+            - image/pjpeg
+            - image/tiff
+    UploadMediaResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Media id to pass to create_post as media.media_ids.
+            media_key:
+              type: string
+            expires_after_secs:
+              type: integer
+            size:
+              type: integer

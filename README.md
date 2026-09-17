@@ -49,10 +49,13 @@ python out/tickets/server.py                        # speaks MCP on stdin/stdout
 The process looks idle because it is waiting for MCP JSON-RPC on stdin. That is
 what an MCP client attaches to. Committed examples of the output live in
 [`examples/generated/tickets_mcp`](examples/generated/tickets_mcp) (fictional
-service desk) and [`examples/generated/meta_graph_mcp`](examples/generated/meta_graph_mcp)
-(one real vendor: a curated Facebook Pages / Meta Graph subset). How to
-generate that second example, including `META_GRAPH_READ_ONLY=1` and token
-injection, is in [`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
+service desk), [`examples/generated/meta_graph_mcp`](examples/generated/meta_graph_mcp)
+(a curated Facebook Pages / Meta Graph subset), and
+[`examples/generated/x_mcp`](examples/generated/x_mcp) (a curated X Posts write
+subset: create/quote + image upload). How to generate those vendor examples,
+including `*_READ_ONLY=1` and token injection, is in
+[`examples/meta-graph-pages.md`](examples/meta-graph-pages.md) and
+[`examples/x-api.md`](examples/x-api.md).
 
 Swap in a real spec by changing three things: `--spec`, `--name` (which also sets
 the environment variable prefix), and the credentials you export.
@@ -128,6 +131,33 @@ The same discover → generate → fail-closed `READ_ONLY` smoke → seat a
 [`docs/FACTORY_LOOP.md`](docs/FACTORY_LOOP.md). `make factory` runs that
 dogfood path against the Meta Graph files. It is not a multi-vendor factory
 product.
+
+## Vendor example: X Posts (create / quote / images)
+
+The Cursor marketplace X plugin is read-only (search, timelines, bookmarks —
+no create-post or media-upload tools). This repo includes a **small** X API
+v2 spec for the write surface the generator *can* emit: `POST /2/tweets`
+(text, quote, reply, media ids) and one-shot `POST /2/media/upload` as JSON
+base64. It is not the full X API, and it is not OAuth 1.0a HMAC.
+
+```bash
+openapi_to_mcp generate \
+  --spec examples/x-api-openapi.yaml \
+  --out examples/generated/x_mcp \
+  --name x \
+  --overrides examples/x-api-overrides.yaml \
+  --force
+```
+
+| Env | Purpose |
+| --- | --- |
+| `X_API_TOKEN` | OAuth 2.0 **user** access token (environment or secret manager) |
+| `X_READ_ONLY=1` | Hide create_post / upload_media |
+| `X_BASE_URL` | Optional host override (spec default `https://api.x.com`) |
+
+Never commit the token. App-only bearers cannot write. Operator notes, quote
+vs media limits, and a sample `mcp.json` shape:
+[`examples/x-api.md`](examples/x-api.md).
 
 ## How it works
 
@@ -210,14 +240,14 @@ increasing order of effort:
 make install     # editable install with dev extras
 make test        # pytest, including a real subprocess MCP handshake
 make lint        # ruff
-make example     # regenerate tickets_mcp and meta_graph_mcp
+make example     # regenerate tickets_mcp, meta_graph_mcp, and x_mcp
 make factory     # Meta Graph dogfood: list-tools → generate → smoke
 ```
 
 The test suite covers OpenAPI to tool-list translation, argument mapping, the
 safety rails, and an end-to-end run where a generated server is launched as a
 subprocess and driven over stdio against a throwaway HTTP API. Tests also fail
-if a committed example (`tickets_mcp` or `meta_graph_mcp`) drifts from what the
+if a committed example (`tickets_mcp`, `meta_graph_mcp`, or `x_mcp`) drifts from what the
 generator produces.
 
 ## Roadmap
@@ -237,8 +267,8 @@ generator produces.
 ## Non-goals for this MVP
 
 No hosted control plane, no credential storage, and no browser automation in
-this repo. The fictional tickets sample and the curated Meta Graph Pages subset
-are regeneratable examples, not production connectors: they never include
-tokens. A particular issue tracker, vault, or seating ritual is never required
-to generate or run a server. ConnectWise-class PSA connectors are still out of
-scope.
+this repo. The fictional tickets sample and the curated Meta Graph Pages and
+X Posts subsets are regeneratable examples, not production connectors: they
+never include tokens. A particular issue tracker, vault, or seating ritual is
+never required to generate or run a server. ConnectWise-class PSA connectors
+are still out of scope.

@@ -18,6 +18,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_SPEC = REPO_ROOT / "examples" / "tickets-openapi.yaml"
 META_GRAPH_SPEC = REPO_ROOT / "examples" / "meta-graph-pages-openapi.yaml"
 META_GRAPH_OVERRIDES = REPO_ROOT / "examples" / "meta-graph-pages-overrides.yaml"
+X_API_SPEC = REPO_ROOT / "examples" / "x-api-openapi.yaml"
+X_API_OVERRIDES = REPO_ROOT / "examples" / "x-api-overrides.yaml"
 
 
 @pytest.fixture(scope="session")
@@ -44,4 +46,16 @@ def meta_graph_spec() -> dict[str, Any]:
 def meta_graph_service(meta_graph_spec: dict[str, Any]) -> Service:
     discovered = discover(meta_graph_spec, name="meta_graph").service
     curated, _ = apply_overrides(discovered, load_overrides(META_GRAPH_OVERRIDES))
+    return curated
+
+
+@pytest.fixture(scope="session")
+def x_api_spec() -> dict[str, Any]:
+    return load_spec(X_API_SPEC)
+
+
+@pytest.fixture
+def x_api_service(x_api_spec: dict[str, Any]) -> Service:
+    discovered = discover(x_api_spec, name="x").service
+    curated, _ = apply_overrides(discovered, load_overrides(X_API_OVERRIDES))
     return curated

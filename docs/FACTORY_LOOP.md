@@ -110,7 +110,19 @@ make factory \
   OVERRIDES=examples/tickets-overrides.yaml
 ```
 
-`make example` is unchanged: it still defaults `SPEC` to the tickets sample.
+X Posts write subset (`create_post` + `upload_media`; GET-only smoke still
+calls `get_me` only):
+
+```bash
+make factory \
+  SPEC=examples/x-api-openapi.yaml \
+  NAME=x \
+  OUT=examples/generated/x_mcp \
+  OVERRIDES=examples/x-api-overrides.yaml
+```
+
+`make example` is unchanged: it still defaults `SPEC` to the tickets sample,
+and also regenerates the Meta Graph and X Posts committed servers.
 
 ## Seat checklist (non-prod agent only)
 

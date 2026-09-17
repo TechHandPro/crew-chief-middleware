@@ -6,6 +6,9 @@ EXAMPLE_OUT ?= examples/generated/tickets_mcp
 META_SPEC ?= examples/meta-graph-pages-openapi.yaml
 META_OVERRIDES ?= examples/meta-graph-pages-overrides.yaml
 META_EXAMPLE_OUT ?= examples/generated/meta_graph_mcp
+X_SPEC ?= examples/x-api-openapi.yaml
+X_OVERRIDES ?= examples/x-api-overrides.yaml
+X_EXAMPLE_OUT ?= examples/generated/x_mcp
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-10s %s\n", $$1, $$2}'
@@ -24,13 +27,15 @@ format: ## apply formatting
 	$(PYTHON) -m ruff format src tests scripts
 	$(PYTHON) -m ruff check --fix src tests scripts
 
-example: ## regenerate committed example servers (tickets + Meta Graph Pages)
+example: ## regenerate committed example servers (tickets + Meta Graph Pages + X Posts)
 	$(PYTHON) -m openapi_to_mcp generate --spec $(SPEC) --out $(EXAMPLE_OUT) --name tickets --force
 	$(PYTHON) -m openapi_to_mcp generate --spec $(META_SPEC) --out $(META_EXAMPLE_OUT) --name meta_graph --overrides $(META_OVERRIDES) --force
+	$(PYTHON) -m openapi_to_mcp generate --spec $(X_SPEC) --out $(X_EXAMPLE_OUT) --name x --overrides $(X_OVERRIDES) --force
 
 demo: ## show the tools the sample specs produce
 	$(PYTHON) -m openapi_to_mcp list-tools --spec $(SPEC) --name tickets
 	$(PYTHON) -m openapi_to_mcp list-tools --spec $(META_SPEC) --name meta_graph --overrides $(META_OVERRIDES)
+	$(PYTHON) -m openapi_to_mcp list-tools --spec $(X_SPEC) --name x --overrides $(X_OVERRIDES)
 
 # One Meta Graph dogfood path, not a multi-vendor factory product.
 # `make example` keeps SPEC=tickets. Command-line SPEC=/NAME=/OUT=/OVERRIDES=

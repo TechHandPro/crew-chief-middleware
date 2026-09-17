@@ -7,7 +7,7 @@ told that a particular issue tracker, vault, or seating lane is required.
 
 | Surface | What it is | How it is configured |
 |---------|------------|----------------------|
-| **Public pack** | README, architecture overview, fictional tickets sample, curated Meta Graph example, generated servers | Zero credentials. Tokens are env-only. |
+| **Public pack** | README, architecture overview, fictional tickets sample, curated Meta Graph and X Posts examples, generated servers | Zero credentials. Tokens are env-only. |
 | **Operator notes** | Factory dogfood runbook, optional vault/orange-prompt habit, internal ticket pins | Optional. Not the default path. |
 
 Companion UI: [`crew-chief-ops-console`](https://github.com/TechHandPro/crew-chief-ops-console)
@@ -30,13 +30,13 @@ contain **none** of the following as required values or default narrative:
    `tickets.example.com`.
 4. **Secret material.** No Page tokens, PEM blocks, or live API keys in git.
 
-Allowed: Meta Graph as *one vendor example among others*; the words
+Allowed: Meta Graph and X Posts as *vendor examples among others*; the words
 **Cursor** / **Grok Bot** as MCP hosts; the public GitHub org `TechHandPro`
 in clone URLs; operator runbooks under `docs/FACTORY_LOOP.md` and
 `docs/agents/` that name a crew process.
 
-`examples/meta-graph-pages.md` may include an **Optional operator notes**
-section. That section is not the default path.
+`examples/meta-graph-pages.md` and `examples/x-api.md` may include an
+**Optional operator notes** section. That section is not the default path.
 
 This document is the maintainer note that *may* name process IDs so the
 split is explicit. The automated check does **not** scan this file,

@@ -157,7 +157,7 @@ generator exists to make step 1 cheap enough that step 3 stops being the default
 | `docs/FACTORY_LOOP.md` | Optional operator dogfood runbook (one spec → READ_ONLY smoke → non-prod seat) |
 | `docs/public-pack.md` | Public pack vs operator notes; README deny-list |
 | `scripts/factory_smoke.py` | fail-closed credential smoke; GET-only; never prints tokens |
-| `examples/` | fictional tickets spec, curated Meta Graph Pages spec, overrides, and committed generated servers |
+| `examples/` | fictional tickets spec, curated Meta Graph Pages and X Posts specs, overrides, and committed generated servers |
 | `tests/` | unit tests plus a real subprocess MCP handshake |
 
 ## Known limits

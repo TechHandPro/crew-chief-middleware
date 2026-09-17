@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "x": {
+      "command": "python",
+      "args": ["/absolute/path/to/x/server.py"],
+      "env": {
+        "X_BASE_URL": "https://api.x.com"
+      }
+    }
+  }
+}
