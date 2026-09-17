@@ -47,9 +47,12 @@ python out/tickets/server.py                        # speaks MCP on stdin/stdout
 ```
 
 The process looks idle because it is waiting for MCP JSON-RPC on stdin. That is
-what an MCP client attaches to. A committed example of the output lives in
-[`examples/generated/tickets_mcp`](examples/generated/tickets_mcp), including
-`list_tickets` and `get_ticket`.
+what an MCP client attaches to. Committed examples of the output live in
+[`examples/generated/tickets_mcp`](examples/generated/tickets_mcp) (fictional
+service desk) and [`examples/generated/meta_graph_mcp`](examples/generated/meta_graph_mcp)
+(curated Facebook Pages / Meta Graph surface for SOCIAL). How SOCIAL or Grok Bot
+connects, including vaulted Page tokens and `META_GRAPH_READ_ONLY=1`, is in
+[`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
 
 Swap in a real spec by changing three things: `--spec`, `--name` (which also sets
 the environment variable prefix), and the credentials you export.
@@ -90,6 +93,33 @@ virtualenv, each generated project also has a `Dockerfile`
 
 Start with `*_READ_ONLY=1` while you are still deciding which write operations an
 agent should be trusted with; the server then advertises only non-mutating tools.
+SOCIAL should keep `META_GRAPH_READ_ONLY=1` until a human has approved live Page
+posts. Page tokens come from the TNT vault via orange-prompt — never from chat
+and never from a committed file.
+
+## Meta Graph Pages example (SOCIAL)
+
+Facebook has no solid marketplace MCP plugin, so SOCIAL generates one here from
+a **small** Pages-focused spec — not the entire Graph API, and not the official
+WhatsApp-only `facebook/openapi`.
+
+```bash
+openapi_to_mcp generate \
+  --spec examples/meta-graph-pages-openapi.yaml \
+  --out examples/generated/meta_graph_mcp \
+  --name meta_graph \
+  --overrides examples/meta-graph-pages-overrides.yaml \
+  --force
+```
+
+| Env | Purpose |
+| --- | --- |
+| `META_GRAPH_API_TOKEN` | Page access token from the TNT vault (orange-prompt only) |
+| `META_GRAPH_READ_ONLY=1` | Default for SOCIAL: hide create/comment/media publish tools |
+| `META_GRAPH_BASE_URL` | Optional Graph host/version override (spec default `https://graph.facebook.com/v24.0`) |
+
+Never commit the token. Operator notes, Grok Bot `mcp.json` shape, and Graph
+permissions: [`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
 
 ## How it works
 
@@ -172,13 +202,14 @@ increasing order of effort:
 make install     # editable install with dev extras
 make test        # pytest, including a real subprocess MCP handshake
 make lint        # ruff
-make example     # regenerate examples/generated/tickets_mcp
+make example     # regenerate tickets_mcp and meta_graph_mcp
 ```
 
 The test suite covers OpenAPI to tool-list translation, argument mapping, the
 safety rails, and an end-to-end run where a generated server is launched as a
-subprocess and driven over stdio against a throwaway HTTP API. A test also fails
-if the committed example drifts from what the generator produces.
+subprocess and driven over stdio against a throwaway HTTP API. Tests also fail
+if a committed example (`tickets_mcp` or `meta_graph_mcp`) drifts from what the
+generator produces.
 
 ## Roadmap
 
@@ -196,6 +227,7 @@ if the committed example drifts from what the generator produces.
 
 ## Non-goals for this MVP
 
-No real vendor connectors (ConnectWise and friends) ship here — the generator
-plus the fictional sample is the deliverable. No hosted control plane, no
-credential storage, and no browser automation in this repo.
+No hosted control plane, no credential storage, and no browser automation in
+this repo. The fictional tickets sample and the curated Meta Graph Pages subset
+are regeneratable examples, not production connectors: they never include
+tokens. ConnectWise-class PSA connectors are still out of scope.
