@@ -35,6 +35,11 @@ openapi_to_mcp generate \
 
 `make example` regenerates this server and the tickets sample.
 
+The crew factory loop for this reference run — discover → generate → fail-closed
+`READ_ONLY` smoke → seat a **non-prod** agent only — is documented in
+[`docs/FACTORY_LOOP.md`](../docs/FACTORY_LOOP.md) (TNT #330). `make factory`
+wraps `list-tools`, `generate`, and `scripts/factory_smoke.py` for these files.
+
 `--name meta_graph` sets the env prefix to `META_GRAPH`.
 
 ## Credentials (never commit, never chat)

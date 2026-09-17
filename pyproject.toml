@@ -44,7 +44,7 @@ timeout = 120
 [tool.ruff]
 line-length = 110
 target-version = "py311"
-src = ["src", "tests"]
+src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "TID"]

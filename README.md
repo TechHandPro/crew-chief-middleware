@@ -121,6 +121,11 @@ openapi_to_mcp generate \
 Never commit the token. Operator notes, Grok Bot `mcp.json` shape, and Graph
 permissions: [`examples/meta-graph-pages.md`](examples/meta-graph-pages.md).
 
+The measurable crew loop for this example (discover → generate → fail-closed
+`READ_ONLY` smoke → seat a **non-prod** agent only) is
+[`docs/FACTORY_LOOP.md`](docs/FACTORY_LOOP.md) (TNT #330). `make factory`
+runs that Meta Graph dogfood path. It is not a multi-vendor factory product.
+
 ## How it works
 
 Four stages, described in full in [ARCHITECTURE.md](ARCHITECTURE.md):
@@ -203,6 +208,7 @@ make install     # editable install with dev extras
 make test        # pytest, including a real subprocess MCP handshake
 make lint        # ruff
 make example     # regenerate tickets_mcp and meta_graph_mcp
+make factory     # TNT #330 Meta Graph dogfood: list-tools → generate → smoke
 ```
 
 The test suite covers OpenAPI to tool-list translation, argument mapping, the

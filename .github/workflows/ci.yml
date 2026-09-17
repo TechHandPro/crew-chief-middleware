@@ -33,8 +33,8 @@ jobs:
 
       - name: Lint
         run: |
-          python -m ruff check src tests
-          python -m ruff format --check src tests
+          python -m ruff check src tests scripts
+          python -m ruff format --check src tests scripts
 
       # Includes tests/test_example_is_current.py, which fails if the committed
       # example under examples/generated/ drifts from the generator's output.
