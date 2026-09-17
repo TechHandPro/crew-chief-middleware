@@ -1,0 +1,83 @@
+# Specialization for the curated Meta Graph Pages spec (TNT #324 SOCIAL).
+#
+#   openapi_to_mcp generate \
+#     --spec examples/meta-graph-pages-openapi.yaml \
+#     --out examples/generated/meta_graph_mcp \
+#     --name meta_graph \
+#     --overrides examples/meta-graph-pages-overrides.yaml
+#
+# Names already come from operationIds. Descriptions are prompt surface for
+# SOCIAL / Grok Bot: when to call each tool, which token it needs, and that
+# writes are off under META_GRAPH_READ_ONLY=1.
+
+tools:
+  get_current_page:
+    description: >-
+      Identify the Facebook Page this Page access token belongs to. Call this
+      first to get page-id. Do not request access_token in fields.
+  list_managed_pages:
+    description: >-
+      List Pages a User token can manage (pages_show_list). Skip this when you
+      already have a Page token — use get_current_page instead. Never ask Graph
+      for Page tokens in fields; load META_GRAPH_API_TOKEN from the vault.
+  get_page:
+    description: >-
+      Read one Page's metadata (name, about, fan_count, link). Pass the numeric
+      page-id from get_current_page.
+  list_page_feed:
+    description: >-
+      List the Page feed (Page posts plus public tags). Prefer this for a
+      timeline view; use list_page_posts when you only want posts the Page
+      authored. Cap limit at 100.
+  create_page_post:
+    description: >-
+      Publish a text and/or link post as the Page. Requires pages_manage_posts.
+      Blocked while META_GRAPH_READ_ONLY=1. For photos/videos use
+      publish_page_photo or publish_page_video with a public URL.
+  list_page_posts:
+    description: >-
+      List posts the Page itself published (not visitor posts). Use get_post
+      for one id and list_post_comments for the thread.
+  get_post:
+    description: >-
+      Read one post. Default fields already include likes.summary(true) and
+      comments.summary(true) for engagement counts.
+  list_post_comments:
+    description: >-
+      List comments on a post. Use filter=stream to include replies; otherwise
+      call list_comment_replies on a comment-id.
+  create_post_comment:
+    description: >-
+      Comment on a post as the Page. Blocked while META_GRAPH_READ_ONLY=1.
+  list_post_likes:
+    description: >-
+      List who liked a post, or pass summary=true (the default) when you only
+      need a count. get_post with likes.summary(true) is usually enough.
+  get_comment:
+    description: Read one comment by id, including like_count and reply count.
+  list_comment_replies:
+    description: List replies under a comment.
+  reply_to_comment:
+    description: >-
+      Reply to a comment as the Page. Blocked while META_GRAPH_READ_ONLY=1.
+  list_page_insights:
+    description: >-
+      Read Page insights (impressions, reach, engagement). Requires
+      read_insights. Pass metric as a comma-separated Graph metric list for
+      this API version.
+  list_post_insights:
+    description: >-
+      Read per-post insights. Requires read_insights. Pair with get_post for
+      the caption and permalink.
+  list_page_photos:
+    description: List photos already on the Page.
+  publish_page_photo:
+    description: >-
+      Publish a photo from a public https URL (no local file upload). Blocked
+      while META_GRAPH_READ_ONLY=1.
+  list_page_videos:
+    description: List videos already on the Page.
+  publish_page_video:
+    description: >-
+      Publish a video from a public file_url (no rupload binary host). Blocked
+      while META_GRAPH_READ_ONLY=1.

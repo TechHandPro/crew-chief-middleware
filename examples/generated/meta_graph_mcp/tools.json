@@ -1,0 +1,1291 @@
+{
+  "manifest_version": 1,
+  "generator": {
+    "name": "openapi-to-mcp",
+    "version": "0.1.0",
+    "generated_at": "2026-09-17T01:52:14+00:00"
+  },
+  "service": {
+    "name": "meta_graph",
+    "title": "Meta Graph Pages API (curated)",
+    "version": "24.0",
+    "description": "A deliberately small OpenAPI 3 subset of the Facebook/Meta Graph API for one Facebook Page: metadata, feed/posts, comments, basic engagement, insights, and URL-based photo/video publish. This is not the full Graph API (no Ads, Messenger, WhatsApp, Reels upload host, or Instagram). Official facebook/openapi is WhatsApp-only today; this document is curated for the SOCIAL bot from the Pages/posts surface (Graph v24.0). Use a Page access token. Never put tokens in this file.",
+    "env_prefix": "META_GRAPH",
+    "base_url": "https://graph.facebook.com/v24.0",
+    "auth": {
+      "kind": "bearer",
+      "env": {
+        "token": "META_GRAPH_API_TOKEN"
+      },
+      "scheme_name": "bearerAuth"
+    }
+  },
+  "tools": [
+    {
+      "name": "get_current_page",
+      "description": "Identify the Facebook Page this Page access token belongs to. Call this first to get page-id. Do not request access_token in fields.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "string",
+            "default": "id,name,category,about,fan_count,followers_count,website,link",
+            "description": "Comma-separated Page fields. Never request access_token."
+          }
+        },
+        "additionalProperties": false
+      },
+      "request": {
+        "method": "GET",
+        "path": "/me",
+        "parameters": [
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getCurrentPage",
+      "tags": [
+        "Pages"
+      ]
+    },
+    {
+      "name": "list_managed_pages",
+      "description": "List Pages a User token can manage (pages_show_list). Skip this when you already have a Page token — use get_current_page instead. Never ask Graph for Page tokens in fields; load META_GRAPH_API_TOKEN from the vault.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "string",
+            "default": "id,name,category,about,fan_count,followers_count,website,link",
+            "description": "Comma-separated Page fields. Never request access_token."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false
+      },
+      "request": {
+        "method": "GET",
+        "path": "/me/accounts",
+        "parameters": [
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listManagedPages",
+      "tags": [
+        "Pages"
+      ]
+    },
+    {
+      "name": "get_page",
+      "description": "Read one Page's metadata (name, about, fan_count, link). Pass the numeric page-id from get_current_page.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,name,category,about,fan_count,followers_count,website,link",
+            "description": "Comma-separated Page fields. Never request access_token."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getPage",
+      "tags": [
+        "Pages"
+      ]
+    },
+    {
+      "name": "list_page_feed",
+      "description": "List the Page feed (Page posts plus public tags). Prefer this for a timeline view; use list_page_posts when you only want posts the Page authored. Cap limit at 100.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,permalink_url,is_published,shares,likes.summary(true),comments.summary(true)",
+            "description": "Comma-separated Post fields. Include *.summary(true) for counts."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "since": {
+            "type": "string",
+            "description": "Lower bound (unix timestamp or ISO-8601)."
+          },
+          "until": {
+            "type": "string",
+            "description": "Upper bound (unix timestamp or ISO-8601)."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}/feed",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "since",
+            "name": "since",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "until",
+            "name": "until",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPageFeed",
+      "tags": [
+        "Posts",
+        "Pages"
+      ]
+    },
+    {
+      "name": "create_page_post",
+      "description": "Publish a text and/or link post as the Page. Requires pages_manage_posts. Blocked while META_GRAPH_READ_ONLY=1. For photos/videos use publish_page_photo or publish_page_video with a public URL.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "body": {
+            "$ref": "#/$defs/CreatePostRequest",
+            "description": "Status text and/or a link. One of message or link is required by Graph."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body"
+        ],
+        "$defs": {
+          "CreatePostRequest": {
+            "type": "object",
+            "description": "Graph requires message and/or link.",
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Status text."
+              },
+              "link": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to attach."
+              },
+              "published": {
+                "type": "boolean",
+                "default": true,
+                "description": "false to create an unpublished/scheduled post."
+              },
+              "scheduled_publish_time": {
+                "type": "integer",
+                "description": "Unix timestamp, 10 minutes to 75 days ahead, when published=false."
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/{page-id}/feed",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/x-www-form-urlencoded",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "createPagePost",
+      "tags": [
+        "Posts"
+      ]
+    },
+    {
+      "name": "list_page_posts",
+      "description": "List posts the Page itself published (not visitor posts). Use get_post for one id and list_post_comments for the thread.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,permalink_url,is_published,shares,likes.summary(true),comments.summary(true)",
+            "description": "Comma-separated Post fields. Include *.summary(true) for counts."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "since": {
+            "type": "string",
+            "description": "Lower bound (unix timestamp or ISO-8601)."
+          },
+          "until": {
+            "type": "string",
+            "description": "Upper bound (unix timestamp or ISO-8601)."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}/posts",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "since",
+            "name": "since",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "until",
+            "name": "until",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPagePosts",
+      "tags": [
+        "Posts",
+        "Pages"
+      ]
+    },
+    {
+      "name": "get_post",
+      "description": "Read one post. Default fields already include likes.summary(true) and comments.summary(true) for engagement counts.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Post id, often `{page-id}_{post-id}`."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,permalink_url,is_published,shares,likes.summary(true),comments.summary(true)",
+            "description": "Comma-separated Post fields. Include *.summary(true) for counts."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "post_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{post-id}",
+        "parameters": [
+          {
+            "arg": "post_id",
+            "name": "post-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getPost",
+      "tags": [
+        "Posts"
+      ]
+    },
+    {
+      "name": "list_post_comments",
+      "description": "List comments on a post. Use filter=stream to include replies; otherwise call list_comment_replies on a comment-id.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Post id, often `{page-id}_{post-id}`."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,from,like_count,comment_count",
+            "description": "Comma-separated Comment fields."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "chronological",
+              "reverse_chronological"
+            ],
+            "default": "chronological",
+            "description": "chronological or reverse_chronological."
+          },
+          "filter": {
+            "type": "string",
+            "enum": [
+              "stream",
+              "toplevel"
+            ],
+            "default": "toplevel",
+            "description": "toplevel (default) or stream (includes replies)."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "post_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{post-id}/comments",
+        "parameters": [
+          {
+            "arg": "post_id",
+            "name": "post-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "order",
+            "name": "order",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "filter",
+            "name": "filter",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPostComments",
+      "tags": [
+        "Comments"
+      ]
+    },
+    {
+      "name": "create_post_comment",
+      "description": "Comment on a post as the Page. Blocked while META_GRAPH_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Post id, often `{page-id}_{post-id}`."
+          },
+          "body": {
+            "$ref": "#/$defs/CreateCommentRequest"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "post_id",
+          "body"
+        ],
+        "$defs": {
+          "CreateCommentRequest": {
+            "type": "object",
+            "required": [
+              "message"
+            ],
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Comment text as the Page."
+              },
+              "attachment_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Optional image or link URL."
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/{post-id}/comments",
+        "parameters": [
+          {
+            "arg": "post_id",
+            "name": "post-id",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/x-www-form-urlencoded",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "createPostComment",
+      "tags": [
+        "Comments"
+      ]
+    },
+    {
+      "name": "list_post_likes",
+      "description": "List who liked a post, or pass summary=true (the default) when you only need a count. get_post with likes.summary(true) is usually enough.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Post id, often `{page-id}_{post-id}`."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          },
+          "summary": {
+            "type": "boolean",
+            "default": true,
+            "description": "When true, include a total_count summary object."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "post_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{post-id}/likes",
+        "parameters": [
+          {
+            "arg": "post_id",
+            "name": "post-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "summary",
+            "name": "summary",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPostLikes",
+      "tags": [
+        "Engagement"
+      ]
+    },
+    {
+      "name": "get_comment",
+      "description": "Read one comment by id, including like_count and reply count.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "description": "Comment id."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,from,like_count,comment_count",
+            "description": "Comma-separated Comment fields."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "comment_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{comment-id}",
+        "parameters": [
+          {
+            "arg": "comment_id",
+            "name": "comment-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "getComment",
+      "tags": [
+        "Comments"
+      ]
+    },
+    {
+      "name": "list_comment_replies",
+      "description": "List replies under a comment.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "description": "Comment id."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,message,created_time,from,like_count,comment_count",
+            "description": "Comma-separated Comment fields."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "comment_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{comment-id}/comments",
+        "parameters": [
+          {
+            "arg": "comment_id",
+            "name": "comment-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listCommentReplies",
+      "tags": [
+        "Comments"
+      ]
+    },
+    {
+      "name": "reply_to_comment",
+      "description": "Reply to a comment as the Page. Blocked while META_GRAPH_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "description": "Comment id."
+          },
+          "body": {
+            "$ref": "#/$defs/CreateCommentRequest"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "comment_id",
+          "body"
+        ],
+        "$defs": {
+          "CreateCommentRequest": {
+            "type": "object",
+            "required": [
+              "message"
+            ],
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Comment text as the Page."
+              },
+              "attachment_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Optional image or link URL."
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/{comment-id}/comments",
+        "parameters": [
+          {
+            "arg": "comment_id",
+            "name": "comment-id",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/x-www-form-urlencoded",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "replyToComment",
+      "tags": [
+        "Comments"
+      ]
+    },
+    {
+      "name": "list_page_insights",
+      "description": "Read Page insights (impressions, reach, engagement). Requires read_insights. Pass metric as a comma-separated Graph metric list for this API version.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "metric": {
+            "type": "string",
+            "description": "Comma-separated insight metric names for this Graph version. Examples for Pages: page_impressions,page_impressions_unique,page_post_engagements. For posts: post_impressions,post_impressions_unique,post_engaged_users."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "days_28",
+              "month",
+              "lifetime"
+            ],
+            "default": "day",
+            "description": "Aggregation window."
+          },
+          "since": {
+            "type": "string",
+            "description": "Lower bound (unix timestamp or ISO-8601)."
+          },
+          "until": {
+            "type": "string",
+            "description": "Upper bound (unix timestamp or ISO-8601)."
+          },
+          "date_preset": {
+            "type": "string",
+            "enum": [
+              "today",
+              "yesterday",
+              "this_week",
+              "last_week",
+              "this_month",
+              "last_month"
+            ],
+            "description": "Named window when since/until are omitted."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "metric"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}/insights",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "metric",
+            "name": "metric",
+            "location": "query",
+            "required": true
+          },
+          {
+            "arg": "period",
+            "name": "period",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "since",
+            "name": "since",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "until",
+            "name": "until",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "date_preset",
+            "name": "date_preset",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPageInsights",
+      "tags": [
+        "Insights",
+        "Pages"
+      ]
+    },
+    {
+      "name": "list_post_insights",
+      "description": "Read per-post insights. Requires read_insights. Pair with get_post for the caption and permalink.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Post id, often `{page-id}_{post-id}`."
+          },
+          "metric": {
+            "type": "string",
+            "description": "Comma-separated insight metric names for this Graph version. Examples for Pages: page_impressions,page_impressions_unique,page_post_engagements. For posts: post_impressions,post_impressions_unique,post_engaged_users."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "days_28",
+              "month",
+              "lifetime"
+            ],
+            "default": "day",
+            "description": "Aggregation window."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "post_id",
+          "metric"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{post-id}/insights",
+        "parameters": [
+          {
+            "arg": "post_id",
+            "name": "post-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "metric",
+            "name": "metric",
+            "location": "query",
+            "required": true
+          },
+          {
+            "arg": "period",
+            "name": "period",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPostInsights",
+      "tags": [
+        "Insights",
+        "Posts"
+      ]
+    },
+    {
+      "name": "list_page_photos",
+      "description": "List photos already on the Page.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,name,created_time,link,picture",
+            "description": "Comma-separated Photo fields."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}/photos",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPagePhotos",
+      "tags": [
+        "Media",
+        "Pages"
+      ]
+    },
+    {
+      "name": "publish_page_photo",
+      "description": "Publish a photo from a public https URL (no local file upload). Blocked while META_GRAPH_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "body": {
+            "$ref": "#/$defs/PublishPhotoRequest"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body"
+        ],
+        "$defs": {
+          "PublishPhotoRequest": {
+            "type": "object",
+            "required": [
+              "url"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Public https URL of the image. No local file upload."
+              },
+              "caption": {
+                "type": "string",
+                "description": "Photo caption (also accepted as message by Graph)."
+              },
+              "published": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/{page-id}/photos",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/x-www-form-urlencoded",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "publishPagePhoto",
+      "tags": [
+        "Media"
+      ]
+    },
+    {
+      "name": "list_page_videos",
+      "description": "List videos already on the Page.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "fields": {
+            "type": "string",
+            "default": "id,title,description,created_time,permalink_url,length",
+            "description": "Comma-separated Video fields."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size. Graph caps feed reads at 100."
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor from a previous paging.cursors.after."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/{page-id}/videos",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          },
+          {
+            "arg": "fields",
+            "name": "fields",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "limit",
+            "name": "limit",
+            "location": "query",
+            "required": false
+          },
+          {
+            "arg": "after",
+            "name": "after",
+            "location": "query",
+            "required": false
+          }
+        ]
+      },
+      "read_only": true,
+      "operation_id": "listPageVideos",
+      "tags": [
+        "Media",
+        "Pages"
+      ]
+    },
+    {
+      "name": "publish_page_video",
+      "description": "Publish a video from a public file_url (no rupload binary host). Blocked while META_GRAPH_READ_ONLY=1.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook Page id (numeric) or vanity. /me also works with a Page token."
+          },
+          "body": {
+            "$ref": "#/$defs/PublishVideoRequest"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body"
+        ],
+        "$defs": {
+          "PublishVideoRequest": {
+            "type": "object",
+            "required": [
+              "file_url"
+            ],
+            "properties": {
+              "file_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Public https URL of the video file. No rupload binary host."
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "published": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/{page-id}/videos",
+        "parameters": [
+          {
+            "arg": "page_id",
+            "name": "page-id",
+            "location": "path",
+            "required": true
+          }
+        ],
+        "body": {
+          "arg": "body",
+          "content_type": "application/x-www-form-urlencoded",
+          "required": true
+        }
+      },
+      "read_only": false,
+      "operation_id": "publishPageVideo",
+      "tags": [
+        "Media"
+      ]
+    }
+  ]
+}

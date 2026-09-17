@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "meta_graph": {
+      "command": "python",
+      "args": ["/absolute/path/to/meta_graph/server.py"],
+      "env": {
+        "META_GRAPH_BASE_URL": "https://graph.facebook.com/v24.0"
+      }
+    }
+  }
+}

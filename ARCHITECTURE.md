@@ -154,7 +154,7 @@ generator exists to make step 1 cheap enough that step 3 stops being the default
 | `src/openapi_to_mcp/runtime/` | Connect (also vendored into every generated server) |
 | `src/openapi_to_mcp/overrides.py` | Specialize |
 | `src/openapi_to_mcp/cli.py` | `generate`, `list-tools` |
-| `examples/` | fictional tickets spec, an overrides file, and the committed generated server |
+| `examples/` | fictional tickets spec, curated Meta Graph Pages spec, overrides, and committed generated servers |
 | `tests/` | unit tests plus a real subprocess MCP handshake |
 
 ## Known limits

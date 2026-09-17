@@ -15,8 +15,10 @@ Never post platform work to a client ticket, or client work to a platform ticket
 
 ## Current state
 
-This repository is **not yet linked** to a TNT organization: `tnt_resolve_repo`
-returns `action_required: link_repo`, and there is no `docs/TNT_TICKET.md` pin.
-Link it in TNT (Organization → Repositories) and add the pin file before using
-ticket, document, or training tools against this repo. Until then, work here is
-driven by the task description alone and no tickets are created.
+- Organization: TechHand Pro Solutions (`organization_id` 1, platform)
+- Repository: `TechHandPro/crew-chief-middleware` (`git_repository_id` 11)
+- Pinned work ticket: TNT **#324** (SOCIAL bot — Facebook + X via MCP)
+
+See `docs/TNT_TICKET.md`. Do not resolve #324 when a middleware slice ships;
+it is the long-lived SOCIAL pin. Pass `git_repository_id` 11 on every
+organization-scoped TNT write.

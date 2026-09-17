@@ -1,0 +1,830 @@
+openapi: 3.0.3
+info:
+  title: Meta Graph Pages API (curated)
+  version: "24.0"
+  description: >-
+    A deliberately small OpenAPI 3 subset of the Facebook/Meta Graph API for one
+    Facebook Page: metadata, feed/posts, comments, basic engagement, insights,
+    and URL-based photo/video publish. This is not the full Graph API (no Ads,
+    Messenger, WhatsApp, Reels upload host, or Instagram). Official
+    facebook/openapi is WhatsApp-only today; this document is curated for the
+    SOCIAL bot from the Pages/posts surface (Graph v24.0). Use a Page access
+    token. Never put tokens in this file.
+  contact:
+    name: Meta for Developers
+    url: https://developers.facebook.com/docs/graph-api
+  license:
+    name: Meta Platform Terms
+    url: https://developers.facebook.com/terms/
+externalDocs:
+  description: Pages API
+  url: https://developers.facebook.com/docs/graph-api/reference/page/
+servers:
+  - url: https://graph.facebook.com/v24.0
+    description: Graph API v24.0 (override with META_GRAPH_BASE_URL for another version)
+security:
+  - bearerAuth: []
+tags:
+  - name: Pages
+  - name: Posts
+  - name: Comments
+  - name: Engagement
+  - name: Insights
+  - name: Media
+paths:
+  /me:
+    get:
+      operationId: getCurrentPage
+      summary: Get the Page bound to this token
+      description: >-
+        With a Page access token, /me is that Page (id, name, category). With a
+        User token it returns the user instead — prefer list_managed_pages then.
+      tags: [Pages]
+      parameters:
+        - $ref: "#/components/parameters/FieldsPage"
+      responses:
+        "200":
+          description: The current Page (Page token) or user (User token).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+  /me/accounts:
+    get:
+      operationId: listManagedPages
+      summary: List Pages the user can manage
+      description: >-
+        Requires a User token with pages_show_list. Do not request access_token
+        in fields; inject the Page token from the vault, never from this response.
+      tags: [Pages]
+      parameters:
+        - $ref: "#/components/parameters/FieldsPage"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: Pages the user administers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagePage"
+  /{page-id}:
+    get:
+      operationId: getPage
+      summary: Get Page metadata
+      description: Read one Page's public and Page-token fields (about, fans, link).
+      tags: [Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/FieldsPage"
+      responses:
+        "200":
+          description: Page metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+  /{page-id}/feed:
+    get:
+      operationId: listPageFeed
+      summary: List the Page feed
+      description: >-
+        Posts published by the Page and public posts that tagged it. Limit is at
+        most 100. Add is_published to fields to tell scheduled vs live posts.
+      tags: [Posts, Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/FieldsPost"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: A page of feed posts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPage"
+    post:
+      operationId: createPagePost
+      summary: Create a Page post
+      description: >-
+        Publish to the Page feed. Supply message and/or link. Needs
+        pages_manage_posts. Gated when META_GRAPH_READ_ONLY=1.
+      tags: [Posts]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      requestBody:
+        required: true
+        description: Status text and/or a link. One of message or link is required by Graph.
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "200":
+          description: The new post id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+  /{page-id}/posts:
+    get:
+      operationId: listPagePosts
+      summary: List posts authored by the Page
+      description: Only posts the Page published, not visitor posts or tags.
+      tags: [Posts, Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/FieldsPost"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: Page-authored posts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPage"
+  /{post-id}:
+    get:
+      operationId: getPost
+      summary: Get one post
+      description: >-
+        Fetch a post. Ask for likes.summary(true), comments.summary(true), and
+        shares in fields for engagement counts without listing every liker.
+      tags: [Posts]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/FieldsPost"
+      responses:
+        "200":
+          description: The post.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+  /{post-id}/comments:
+    get:
+      operationId: listPostComments
+      summary: List comments on a post
+      description: Read comments (and optional replies via filter=stream).
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/FieldsComment"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+        - name: order
+          in: query
+          description: chronological or reverse_chronological.
+          schema:
+            type: string
+            enum: [chronological, reverse_chronological]
+            default: chronological
+        - name: filter
+          in: query
+          description: toplevel (default) or stream (includes replies).
+          schema:
+            type: string
+            enum: [stream, toplevel]
+            default: toplevel
+      responses:
+        "200":
+          description: Comments on the post.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentPage"
+    post:
+      operationId: createPostComment
+      summary: Comment on a post as the Page
+      description: Reply in-thread on a Page post. Gated when META_GRAPH_READ_ONLY=1.
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "200":
+          description: The new comment id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+  /{post-id}/likes:
+    get:
+      operationId: listPostLikes
+      summary: List likes on a post
+      description: >-
+        Profiles who liked the post. Prefer summary=true for a count; listing
+        every liker is rarely what SOCIAL needs.
+      tags: [Engagement]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+        - name: summary
+          in: query
+          description: When true, include a total_count summary object.
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Likes and optional summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikePage"
+  /{comment-id}:
+    get:
+      operationId: getComment
+      summary: Get one comment
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+        - $ref: "#/components/parameters/FieldsComment"
+      responses:
+        "200":
+          description: The comment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+  /{comment-id}/comments:
+    get:
+      operationId: listCommentReplies
+      summary: List replies to a comment
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+        - $ref: "#/components/parameters/FieldsComment"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: Replies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentPage"
+    post:
+      operationId: replyToComment
+      summary: Reply to a comment as the Page
+      description: Gated when META_GRAPH_READ_ONLY=1.
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "200":
+          description: The new reply id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+  /{page-id}/insights:
+    get:
+      operationId: listPageInsights
+      summary: Read Page insights
+      description: >-
+        Page-level metrics (impressions, reach, engagement). Requires
+        read_insights. Metric names change across Graph versions — pass the
+        comma-separated list Graph documents for v24+.
+      tags: [Insights, Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/Metric"
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - name: date_preset
+          in: query
+          description: Named window when since/until are omitted.
+          schema:
+            type: string
+            enum: [today, yesterday, this_week, last_week, this_month, last_month]
+      responses:
+        "200":
+          description: Insight values.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightPage"
+  /{post-id}/insights:
+    get:
+      operationId: listPostInsights
+      summary: Read post insights
+      description: Per-post impressions, reach, and engagement. Requires read_insights.
+      tags: [Insights, Posts]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/Metric"
+        - $ref: "#/components/parameters/Period"
+      responses:
+        "200":
+          description: Post insight values.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightPage"
+  /{page-id}/photos:
+    get:
+      operationId: listPagePhotos
+      summary: List Page photos
+      tags: [Media, Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/FieldsPhoto"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: Photos on the Page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoPage"
+    post:
+      operationId: publishPagePhoto
+      summary: Publish a photo from a URL
+      description: >-
+        URL-based photo publish (no multipart upload). Host the image at a
+        public https URL. Gated when META_GRAPH_READ_ONLY=1.
+      tags: [Media]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PublishPhotoRequest"
+      responses:
+        "200":
+          description: Photo and optional post id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishPhotoResponse"
+  /{page-id}/videos:
+    get:
+      operationId: listPageVideos
+      summary: List Page videos
+      tags: [Media, Pages]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+        - $ref: "#/components/parameters/FieldsVideo"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/After"
+      responses:
+        "200":
+          description: Videos on the Page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoPage"
+    post:
+      operationId: publishPageVideo
+      summary: Publish a video from a URL
+      description: >-
+        URL-based video publish via file_url (no rupload binary host). Gated
+        when META_GRAPH_READ_ONLY=1.
+      tags: [Media]
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PublishVideoRequest"
+      responses:
+        "200":
+          description: Video id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Page access token
+      description: >-
+        Pre-obtained Page access token. Graph also accepts this as a query
+        access_token; the generated server sends Authorization: Bearer. Token
+        comes from META_GRAPH_API_TOKEN only.
+  parameters:
+    PageId:
+      name: page-id
+      in: path
+      required: true
+      description: Facebook Page id (numeric) or vanity. /me also works with a Page token.
+      schema:
+        type: string
+    PostId:
+      name: post-id
+      in: path
+      required: true
+      description: Post id, often `{page-id}_{post-id}`.
+      schema:
+        type: string
+    CommentId:
+      name: comment-id
+      in: path
+      required: true
+      description: Comment id.
+      schema:
+        type: string
+    FieldsPage:
+      name: fields
+      in: query
+      description: Comma-separated Page fields. Never request access_token.
+      schema:
+        type: string
+        default: id,name,category,about,fan_count,followers_count,website,link
+    FieldsPost:
+      name: fields
+      in: query
+      description: Comma-separated Post fields. Include *.summary(true) for counts.
+      schema:
+        type: string
+        default: >-
+          id,message,created_time,permalink_url,is_published,shares,likes.summary(true),comments.summary(true)
+    FieldsComment:
+      name: fields
+      in: query
+      description: Comma-separated Comment fields.
+      schema:
+        type: string
+        default: id,message,created_time,from,like_count,comment_count
+    FieldsPhoto:
+      name: fields
+      in: query
+      description: Comma-separated Photo fields.
+      schema:
+        type: string
+        default: id,name,created_time,link,picture
+    FieldsVideo:
+      name: fields
+      in: query
+      description: Comma-separated Video fields.
+      schema:
+        type: string
+        default: id,title,description,created_time,permalink_url,length
+    Limit:
+      name: limit
+      in: query
+      description: Page size. Graph caps feed reads at 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    After:
+      name: after
+      in: query
+      description: Pagination cursor from a previous paging.cursors.after.
+      schema:
+        type: string
+    Since:
+      name: since
+      in: query
+      description: Lower bound (unix timestamp or ISO-8601).
+      schema:
+        type: string
+    Until:
+      name: until
+      in: query
+      description: Upper bound (unix timestamp or ISO-8601).
+      schema:
+        type: string
+    Metric:
+      name: metric
+      in: query
+      required: true
+      description: >-
+        Comma-separated insight metric names for this Graph version. Examples
+        for Pages: page_impressions,page_impressions_unique,page_post_engagements.
+        For posts: post_impressions,post_impressions_unique,post_engaged_users.
+      schema:
+        type: string
+    Period:
+      name: period
+      in: query
+      description: Aggregation window.
+      schema:
+        type: string
+        enum: [day, week, days_28, month, lifetime]
+        default: day
+  schemas:
+    Page:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        about:
+          type: string
+        fan_count:
+          type: integer
+        followers_count:
+          type: integer
+        website:
+          type: string
+        link:
+          type: string
+          description: facebook.com URL for the Page.
+        phone:
+          type: string
+    GraphUser:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        story:
+          type: string
+        created_time:
+          type: string
+        updated_time:
+          type: string
+        permalink_url:
+          type: string
+        is_published:
+          type: boolean
+        from:
+          $ref: "#/components/schemas/GraphUser"
+        shares:
+          type: object
+          properties:
+            count:
+              type: integer
+        likes:
+          $ref: "#/components/schemas/CountSummary"
+        comments:
+          $ref: "#/components/schemas/CountSummary"
+        full_picture:
+          type: string
+        link:
+          type: string
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        created_time:
+          type: string
+        from:
+          $ref: "#/components/schemas/GraphUser"
+        like_count:
+          type: integer
+        comment_count:
+          type: integer
+        parent:
+          type: object
+          properties:
+            id:
+              type: string
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        created_time:
+          type: string
+        link:
+          type: string
+        picture:
+          type: string
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        created_time:
+          type: string
+        permalink_url:
+          type: string
+        length:
+          type: number
+    Insight:
+      type: object
+      properties:
+        name:
+          type: string
+        period:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                description: Scalar or breakdown object, depending on the metric.
+              end_time:
+                type: string
+    CountSummary:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            total_count:
+              type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphUser"
+    Paging:
+      type: object
+      properties:
+        cursors:
+          type: object
+          properties:
+            before:
+              type: string
+            after:
+              type: string
+        next:
+          type: string
+        previous:
+          type: string
+    PagePage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Page"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    PostPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    CommentPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    LikePage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphUser"
+        summary:
+          type: object
+          properties:
+            total_count:
+              type: integer
+        paging:
+          $ref: "#/components/schemas/Paging"
+    PhotoPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Photo"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    VideoPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Video"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    InsightPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Insight"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    CreatePostRequest:
+      type: object
+      description: Graph requires message and/or link.
+      properties:
+        message:
+          type: string
+          description: Status text.
+        link:
+          type: string
+          format: uri
+          description: URL to attach.
+        published:
+          type: boolean
+          default: true
+          description: false to create an unpublished/scheduled post.
+        scheduled_publish_time:
+          type: integer
+          description: Unix timestamp, 10 minutes to 75 days ahead, when published=false.
+    CreateCommentRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: Comment text as the Page.
+        attachment_url:
+          type: string
+          format: uri
+          description: Optional image or link URL.
+    PublishPhotoRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Public https URL of the image. No local file upload.
+        caption:
+          type: string
+          description: Photo caption (also accepted as message by Graph).
+        published:
+          type: boolean
+          default: true
+    PublishPhotoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Photo id.
+        post_id:
+          type: string
+          description: Feed post created for the photo, when published.
+    PublishVideoRequest:
+      type: object
+      required: [file_url]
+      properties:
+        file_url:
+          type: string
+          format: uri
+          description: Public https URL of the video file. No rupload binary host.
+        title:
+          type: string
+        description:
+          type: string
+        published:
+          type: boolean
+          default: true
+    IdResponse:
+      type: object
+      properties:
+        id:
+          type: string
